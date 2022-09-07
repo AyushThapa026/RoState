@@ -51,7 +51,9 @@ Disclaimer: Anything in all capitals represents the name of
 
 * `StateMachine:AddEvent(eventName : string, stateFrom : string, stateTo : string)`   - Adds an event to the StateMachine
 * `StateMachine[EVENT_NAME](seconds : number)`                                        - Causes the StateMachine to attempt to run EVENT_NAME
-* `StateMachine[get_EVENT_NAME]()`                                                    - Returns information about EVENT_NAME (i.e stateFrom, stateTo)
+* `StateMachine[get_EVENT_NAME]()`                                                    - Returns two values regarding the event, the stateTo and stateFrom
+* `StateMachine:Can(event : string)`                                                  - Returns a boolean true or false if the StateMachine can call a certain event
+* 
 
 ## License
 
