@@ -50,7 +50,7 @@ StateMachine.die(2) -- // sets current state to "died" after 2 seconds
 Disclaimer: Anything in all capitals represents the name of 
 
 * `StateMachine:AddEvent(eventName : string, stateFrom : string, stateTo : string)`   - Adds an event to the StateMachine
-* `StateMachine[EVENT_NAME]()`                                                        - Causes the StateMachine to attempt to run EVENT_NAME
+* `StateMachine[EVENT_NAME](seconds : number)`                                        - Causes the StateMachine to attempt to run EVENT_NAME
 * `StateMachine[get_EVENT_NAME]()`                                                    - Returns information about EVENT_NAME (i.e stateFrom, stateTo)
 
 ## License
