@@ -32,20 +32,15 @@ local Maid = require(script.Maid)
 local Promise = require(script.Promise)
 
 local RoState = {}
-RoState.__index = RoState
 RoState.ClassName = "RoState"
-
--- // Definitions
-local DEFERRED_YIELD = true
 
 --- Returns a new RoState object
 -- @constructor RoState.new()
 -- @treturn RoState
+
 function RoState.new(stateData)
     assert(stateData.events, "[RoState.new] events are required to properly initialize RoState")
     local self = setmetatable({
-        events = stateData.events;
-
         _initial = stateData.initial or "none";
         _state = nil;
         _lastState = nil;
@@ -53,16 +48,28 @@ function RoState.new(stateData)
         _callbacks = stateData.callbacks or {};
 
         _queue = {};
+
+        _events = {};
         
         signals = {Entered = Maid.new(), Left = Maid.new()}
     }, RoState)
 
-    for _, event in pairs(self.events) do
+    for _, event in pairs(stateData.events) do
         self:AddEvent(event.name, event.from, event.to);
     end
     self._state = self._initial
 
     return self
+end
+
+function RoState:__index(index)
+    if RoState[index] then
+        return RoState[index]
+    elseif self._events[index] then
+        return self._events[index]
+    else
+        error(("Attempt to index with nil value '%s'"):format(index), 2)
+    end
 end
 
 function RoState:GetState()
@@ -96,9 +103,8 @@ end
 function RoState:AddEvent(eventName : string, stateFrom : string, stateTo : string)
     assert(eventName and stateFrom and stateTo, "[RoState.AddEvent] eventName, stateFrom, and stateTo all must be valid")
 
-    if not self[eventName] then
-        self[eventName] = function(seconds : number)
-
+    if not self._events[eventName] then
+        self._events[eventName] = function(seconds : number)
             local function eventCalled()
                 if (self._state == stateFrom) or stateFrom == "any" then
                     self._lastState = self._state
@@ -127,7 +133,7 @@ function RoState:AddEvent(eventName : string, stateFrom : string, stateTo : stri
             end
             
         end
-        self["get" .. eventName] = function()
+        self._events["get" .. eventName] = function()
             return stateFrom, stateTo
         end
     else
@@ -144,6 +150,7 @@ function RoState:Can(event : string)
     end
     return false
 end
+
 
 function RoState:Destroy()
     self.signals.Entered:DoCleaning()
