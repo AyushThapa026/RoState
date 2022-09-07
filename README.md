@@ -49,9 +49,16 @@ StateMachine.die(2) -- // sets current state to "died" after 2 seconds
 ## API
 Disclaimer: Anything in all capitals represents the name of 
 
-* `StateMachine:AddEvent(eventName : string, stateFrom : string, stateTo : string)`   - Adds an event to the StateMachine
-* `StateMachine[EVENT_NAME]()`                                                        - Causes the StateMachine to attempt to run EVENT_NAME
-* `StateMachine[get_EVENT_NAME]()`                                                    - Returns information about EVENT_NAME (i.e stateFrom, stateTo)
+* `RoState:GetState()`                                                           - Returns the current state
+* `RoState:AddEvent(eventName : string, stateFrom : string, stateTo : string)`   - Adds an event to the RoState object
+* `RoState[EVENT_NAME](seconds : number)`                                        - Causes the StateMachine to attempt to run EVENT_NAME
+* `RoState[get_EVENT_NAME]()`                                                    - Returns two values regarding the event, the stateTo and stateFrom
+* `RoState:Can(event : string)`                                                  - Returns a boolean true or false if the StateMachine can call a certain event
+* `RoState:Is(state : string)`                                                   - Returns a boolean true if the current state is equal to the given state or false if not.
+* `RoState:GetTransitionMethods(state : string)`                                 - Returns a table of valid events that can be called with the given state (defaults to the current state if none is given)
+* `RoState:Destroy()`                                                            - Destroys all internal variables and signals within the RoState object
+* `RoState:OnStateEnter(state : string)`                                         - Returns a signal that fires every time the given state is entered
+* `RoState:OnStateLeft(state : string)`                                          - Returns a signal that fires every time the given state is left
 
 ## License
 
