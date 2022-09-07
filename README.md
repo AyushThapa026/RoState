@@ -56,3 +56,5 @@ Disclaimer: Anything in all capitals represents the name of
 
 This project is licensed under the MIT License - see the LICENSE.md file for details
 
+## Credit
+* Daniel Perez Alvarez's lua-fsm (https://github.com/unindented/lua-fsm)
