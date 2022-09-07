@@ -3,7 +3,7 @@ local RunService = game:GetService("RunService")
 -- Useful for coordinating multiple states
 --[[
     stateData = {
-        initial = "idle" -- // default is "none"; this is the value that is initialized
+        initial = "idle", -- // default is "none"; this is the value that is initialized
         events = {
             {name = "walk", from = "idle", to = "walking"},
             {name = "die", from = "any", to = "died"}, -- // a from state of "any" will allow this event to be called from any event
@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
         }
     }
 
+    local RoState = require(PATH_HERE)
     local StateMachine = RoState.new(stateData),
 
     StateMachine.walk() -- // sets current state to "walking"
