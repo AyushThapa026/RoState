@@ -8,7 +8,7 @@ When writing code that requires multiple states it can get both challenging and 
 
 ### Getting Started
 
-## Example Code
+# Example Code
 ```lua
 stateData = {
         initial = "idle", -- // default is "none"; this is the value that is initialized
