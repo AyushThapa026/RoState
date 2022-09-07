@@ -29,10 +29,14 @@ local RunService = game:GetService("RunService")
 
 local Signal = require(script.Signal)
 local Maid = require(script.Maid)
+local Promise = require(script.Promise)
 
 local RoState = {}
 RoState.__index = RoState
 RoState.ClassName = "RoState"
+
+-- // Definitions
+local DEFERRED_YIELD = true
 
 --- Returns a new RoState object
 -- @constructor RoState.new()
@@ -42,27 +46,31 @@ function RoState.new(stateData)
     local self = setmetatable({
         events = stateData.events;
 
-        __initial = stateData.initial or "none";
-        __state = nil;
-        __lastState = nil;
+        _initial = stateData.initial or "none";
+        _state = nil;
+        _lastState = nil;
 
-        __callbacks = stateData.callbacks or {};
+        _callbacks = stateData.callbacks or {};
+
+        _queue = {};
         
-        signals = {Entered = Maid.new(), Left = Maid.new}
+        signals = {Entered = Maid.new(), Left = Maid.new()}
     }, RoState)
 
     for _, event in pairs(self.events) do
         self:AddEvent(event.name, event.from, event.to);
     end
+    self._state = self._initial
+
     return self
 end
 
 function RoState:GetState()
-    return self.__state
+    return self._state
 end
 
 function RoState:Is(state : string)
-    return self.__state == state
+    return self._state == state
 end
 
 local function getOrCreateSignal(array, index)
@@ -84,46 +92,40 @@ function RoState:OnStateEnter(stateName)
     return self.signals.Entered[stateName]
 end
 
-local function deferPeriod(seconds : number)
-    local bindable = Instance.new("BindableEvent")
-    local timeNow = os.clock()
-    local heartbeat = nil;
-    heartbeat = RunService.Heartbeat:Connect(function(deltaTime)
-        if (os.clock() - timeNow) >= seconds then
-            heartbeat:Disconnect()
-            heartbeat = nil;
-            bindable:Fire();
-            bindable:Destroy()
-        end
-    end)
-    return bindable;
-end
-
 --- Add an event that can change state when called
 function RoState:AddEvent(eventName : string, stateFrom : string, stateTo : string)
     assert(eventName and stateFrom and stateTo, "[RoState.AddEvent] eventName, stateFrom, and stateTo all must be valid")
 
     if not self[eventName] then
-        self[eventName] = function(deferPeriod)
-            deferPeriod:Wait()
-            if (self.__state == stateFrom) or stateFrom == "any" then
-                self.__lastState = self.__state
-                self.__state = stateTo
+        self[eventName] = function(seconds : number)
 
-                self.signals.Entered[stateTo] = getOrCreateSignal(self.signals.Entered, stateTo);
-                self.signals.Left[stateFrom] = getOrCreateSignal(self.signals.Left, stateTo);
-
-                self.signals.Entered[stateTo]:Fire(self, eventName, stateFrom, stateTo)
-                self.signals.Left[stateFrom]:Fire(self, eventName, stateFrom, stateTo)
-
-                if self.__callbacks[self.__lastState .. "_leave"] then
-                    self.__callbacks[self.__lastState .. "_leave"](self, eventName, stateFrom, stateTo)
-                end
-                
-                if self.__callbacks[self.__state .. "_enter"] then
-                    self.__callbacks[self.__lastState .. "_enter"](self, eventName, stateFrom, stateTo)
+            local function eventCalled()
+                if (self._state == stateFrom) or stateFrom == "any" then
+                    self._lastState = self._state
+                    self._state = stateTo
+    
+                    self.signals.Entered[stateTo] = getOrCreateSignal(self.signals.Entered, stateTo);
+                    self.signals.Left[stateFrom] = getOrCreateSignal(self.signals.Left, stateTo);
+    
+                    self.signals.Entered[stateTo]:Fire(self, eventName, stateFrom, stateTo)
+                    self.signals.Left[stateFrom]:Fire(self, eventName, stateFrom, stateTo)
+    
+                    if self._callbacks[self._lastState .. "_leave"] then
+                        self._callbacks[self._lastState .. "_leave"](self, eventName, stateFrom, stateTo)
+                    end
+                    
+                    if self._callbacks[self._state .. "_enter"] then
+                        self._callbacks[self._lastState .. "_enter"](self, eventName, stateFrom, stateTo)
+                    end
                 end
             end
+
+            if seconds then
+                Promise.delay(seconds):andThen(eventCalled)
+            else
+                eventCalled()
+            end
+            
         end
         self["get" .. eventName] = function()
             return stateFrom, stateTo
@@ -136,7 +138,7 @@ end
 function RoState:Can(event : string)
     if self[event] then
         local _, stateFrom = self["get" .. event]()
-        if stateFrom == self.__state then
+        if stateFrom == self._state then
             return true
         end
     end
@@ -147,7 +149,7 @@ function RoState:Destroy()
     self.signals.Entered:DoCleaning()
     self.signals.Left:DoCleaning()
 
-    table.clear(self.__callbacks);
+    table.clear(self._callbacks);
     table.clear(self.events);
     table.clear(self)
     self = nil;
